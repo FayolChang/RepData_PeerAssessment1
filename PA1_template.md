@@ -1,12 +1,15 @@
 # Reproducible Research: Peer Assessment 1
 
-```{r setoptions}
+
+```r
 library(knitr)
 opts_chunk$set(echo = TRUE, tidy=FALSE, fig.width = 8, fig.height=5)
 ```
 
+
 ## Loading and preprocessing the data
-```{r loading_data}
+
+```r
 rm(list = ls()) ##clear the environment
 
 activity = read.csv("./activity.csv", header=T, 
@@ -14,8 +17,10 @@ activity = read.csv("./activity.csv", header=T,
 ```
 
 
+
 ## What is mean total number of steps taken per day?
-```{r steps_per_day, tidy=FALSE}
+
+```r
 library(dplyr)
 #library(xtable)
 
@@ -24,10 +29,15 @@ steps_per_day = activity %>%
             summarise( total_steps = sum(steps, na.rm=T))
 paste("steps mean is ", round( mean(steps_per_day$total_steps), 1), 
       " and steps median is ", median(steps_per_day$total_steps) )
-
 ```
 
-```{r hist_of_total_steps}
+```
+## [1] "steps mean is  9354.2  and steps median is  10395"
+```
+
+
+
+```r
 library(ggplot2)
 p = ggplot(steps_per_day, aes(x=total_steps))
 p + geom_histogram(aes(y = ..count..), binwidth=2000)+
@@ -35,9 +45,13 @@ p + geom_histogram(aes(y = ..count..), binwidth=2000)+
     xlab("total steps")
 ```
 
+![plot of chunk hist_of_total_steps](figure/hist_of_total_steps.png) 
+
+
 ## What is the average daily activity pattern?
 
-```{r daily_pattern}
+
+```r
 
 daily_pattern = activity %>%
     filter(! is.na(steps) ) %>%
@@ -49,28 +63,45 @@ p = ggplot(daily_pattern, aes(interval, mean_steps))
 p + geom_line() + 
     ggtitle("average daily activity pattern")+
     ylab("average steps")
-
 ```
+
+![plot of chunk daily_pattern](figure/daily_pattern.png) 
+
 
 To get interval of the maximum number of steps, we can sort the **mean_steps** of daily pattern data Descendingly.
 
-```{r get_interval}
+
+```r
 max_step = daily_pattern %>%
             arrange(desc(mean_steps), interval) %>%
             head(1)
 max_step
-
 ```
 
-So, the interval is `r max_step$interval`
+```
+## Source: local data frame [1 x 2]
+## 
+##   interval mean_steps
+## 1      835      206.2
+```
+
+
+So, the interval is 835
 ## Imputing missing values
 To get the total number of 'NA', the easieast way is 
-```{r}
+
+```r
 sum(is.na(activity$steps))
 ```
 
+```
+## [1] 2304
+```
+
+
 Filling the missing data.
-```{r }
+
+```r
 library(data.table)
 activity = as.data.table(activity)
 #filling the missing steps using the mean of steps for that interval
@@ -80,7 +111,9 @@ filling_missing_data = activity[, steps:=ifelse(is.na(.SD$steps),
                                 interval]
 ```
 
-```{r hist_of_filling_data}
+
+
+```r
 steps_per_day_nomissing = filling_missing_data %>%
     group_by(date) %>%
     summarise(total_steps  = sum(steps))
@@ -89,22 +122,41 @@ p = ggplot(steps_per_day_nomissing, aes(x=total_steps))
 p+geom_histogram(aes(y=..count..), binwidth = 2000) + 
     ggtitle("histgram of total steps") + 
     xlab("total steps")
+```
+
+![plot of chunk hist_of_filling_data](figure/hist_of_filling_data.png) 
+
+```r
 
 paste("steps mean is ", round( mean(steps_per_day_nomissing$total_steps), 1), 
       " and steps median is ", round( median(steps_per_day_nomissing$total_steps) ))
+```
 
+```
+## [1] "steps mean is  10766.2  and steps median is  10766"
+```
 
+```r
 
 ```
 
 
 
 
+
 ## Are there differences in activity patterns between weekdays and weekends?
 
-```{r weekday_and_weekend_pattern}
+
+```r
 # set the locale
 Sys.setlocale("LC_TIME", "C")
+```
+
+```
+## [1] "C"
+```
+
+```r
 
 #generate weekdays and its type (e.g. weekday or weekend)
 wkdays = weekdays(filling_missing_data$date, abbreviate=T)
@@ -120,3 +172,6 @@ p + geom_line() + facet_wrap(~type, ncol=1) +
     ggtitle("average weekday and weekend activity pattern") + 
     ylab("average steps")
 ```
+
+![plot of chunk weekday_and_weekend_pattern](figure/weekday_and_weekend_pattern.png) 
+
